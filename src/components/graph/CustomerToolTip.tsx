@@ -7,20 +7,19 @@ import {
 } from "recharts/types/component/DefaultTooltipContent";
 
 import { roundTo4Decimals } from "@/lib/math";
+import { Customer } from "@/types/Simulation";
 
 type CustomerToolTipProps = TooltipProps<ValueType, NameType> & {};
 
 type InfoProps = {
-  key: string;
   color: string;
   name: NameType;
   value: ValueType;
 };
 
-const Info: React.FC<InfoProps> = ({ key, color, name, value }) => {
+const Info: React.FC<InfoProps> = ({ color, name, value }) => {
   return (
     <Typography
-      key={key}
       variant="body2"
       sx={{
         color: color,
@@ -52,7 +51,6 @@ const CustomerToolTip: React.FC<CustomerToolTipProps> = ({
   const theme = useTheme();
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    console.log(data);
     return (
       <Box
         sx={{
@@ -71,7 +69,6 @@ const CustomerToolTip: React.FC<CustomerToolTipProps> = ({
 
         {data.arrivalTime !== undefined && (
           <Info
-            key="arrivalTime"
             color={theme.palette.info.main}
             name="Arrival Time"
             value={data.arrivalTime}
@@ -79,7 +76,6 @@ const CustomerToolTip: React.FC<CustomerToolTipProps> = ({
         )}
         {data.serviceStartTime !== undefined && (
           <Info
-            key="serviceStartTime"
             color={theme.palette.success.main}
             name="Service Start Time"
             value={data.serviceStartTime}
@@ -87,14 +83,40 @@ const CustomerToolTip: React.FC<CustomerToolTipProps> = ({
         )}
         {data.departureTime !== undefined && (
           <Info
-            key="departureTime"
             color={theme.palette.error.main}
             name="Departure Time"
             value={data.departureTime}
           />
         )}
 
-        {payload.map((entry, index) => (
+        {data.blocked && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: "red",
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                backgroundColor: "red",
+                borderRadius: "50%",
+                display: "inline-block",
+                mr: 1,
+              }}
+            />
+            Blocked
+          </Typography>
+        )}
+
+        {payload
+        // filter blocked customers
+        .filter((entry) => (entry.value as unknown as Customer).blocked)
+        .map((entry, index) => (
           <Info
             key={`item-${index}`}
             color={entry.color}

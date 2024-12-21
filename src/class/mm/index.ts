@@ -1,7 +1,7 @@
 import MMQueueSimulator from "./MMQueueSimulator";
 
 const numOfServers = 1;
-const capacity = 3;
+const capacity = Infinity;
 const arrivalRate = 1/10;
 const serviceRate = 1/8;
 const numOfSimulations = 5;

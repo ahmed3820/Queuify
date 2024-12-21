@@ -23,6 +23,24 @@ interface CustomerTimeGraphProps {
   showBottomAxis?: boolean;
 }
 
+import { DotProps } from "recharts";
+
+const CustomDot = (props: DotProps & { payload: { blocked: boolean } }) => {
+  const { cx, cy, payload } = props;
+  if (payload.blocked) {
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={4}
+        stroke="none"
+        fill={props.stroke}
+      />
+    );
+  }
+  return null;
+};
+
 const CustomerTimeGraph: React.FC<CustomerTimeGraphProps> = ({
   queueSystem,
   height,
@@ -145,6 +163,24 @@ const CustomerTimeGraph: React.FC<CustomerTimeGraphProps> = ({
               name="W"
               dot={false}
               strokeWidth={2}
+              xAxisId={
+                showTopAxis ? "top" : showBottomAxis ? "bottom" : "default"
+              }
+            />
+            <Line
+              type="stepAfter"
+              dataKey="blocked"
+              stroke={theme.palette.mode === "dark" ? "#ff0000" : "#ff0000"}
+              name="Blocked"
+              dot={(props) => {
+                const { key, ...restProps } = props;
+                return <CustomDot key={key} {...restProps} />;
+              }}
+              activeDot={(props) => {
+                const { key, ...restProps } = props;
+                return <CustomDot key={key} {...restProps} />;
+              }}
+              strokeWidth={0}
               xAxisId={
                 showTopAxis ? "top" : showBottomAxis ? "bottom" : "default"
               }

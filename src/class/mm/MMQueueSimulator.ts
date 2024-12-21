@@ -9,7 +9,7 @@ const logEnabled = false;
 
 export type MmSimulatorParams = {
   servers: number;
-  capacity: number;
+  capacity?: number;
   arrivalRate: number;
   serviceRate: number;
   numOfSimulations: number;
@@ -31,7 +31,7 @@ class MMQueueSimulator extends QueueSystem {
 
   constructor({
     servers,
-    capacity,
+    capacity = Infinity,
     arrivalRate,
     serviceRate,
     numOfSimulations,
@@ -42,6 +42,18 @@ class MMQueueSimulator extends QueueSystem {
         "Arrival rate and service rate must be positive and non-zero"
       );
     }
+
+    if (servers <= 0) {
+      throw new Error("Number of servers must be positive and non-zero");
+    }
+
+    if (capacity <= 0) {
+      throw new Error("Capacity must be positive and non-zero");
+    }
+    if (numOfSimulations <= 0) {
+      throw new Error("Number of simulations must be positive and non-zero");
+    }
+
     this.arrivalRate = arrivalRate; // Average rate of customer arrivals
     this.serviceRate = serviceRate; // Average rate of service completions
     this.numOfSimulations = numOfSimulations; // Total number of customers to simulate
@@ -81,8 +93,7 @@ class MMQueueSimulator extends QueueSystem {
         }
       } else {
         if (event === undefined) {
-          console.error("No more events to process. Exiting simulation loop.");
-          break; // Exit the loop to prevent infinite running
+          break;    // No more events to process. Exiting simulation loop.
         } else {
           console.error("Invalid event time:", event?.time);
         }
@@ -107,7 +118,7 @@ class MMQueueSimulator extends QueueSystem {
         arrivalCount: this.arrivalCount,
         arrivalCustomers: new Set<number>(),
         blocked: null,
-        blockCount: this.BlockCount,
+        blockCount: this.capacity === Infinity ? null : this.BlockCount,
         enteredService: false,
         serviceCount: this.serviceCount,
         serviceCustomers: new Set<number>(),
@@ -144,7 +155,9 @@ class MMQueueSimulator extends QueueSystem {
 
   scheduleNextArrival(currentTime: number) {
     if (this.arrivalCount < this.numOfSimulations) {
-      const nextArrivalTime = roundTo4Decimals(currentTime + exponentialRandom(this.arrivalRate));
+      const nextArrivalTime = roundTo4Decimals(
+        currentTime + exponentialRandom(this.arrivalRate)
+      );
       if (isFinite(nextArrivalTime)) {
         const customer: Customer = {
           customerId: this.arrivalCount + 1,
@@ -165,7 +178,7 @@ class MMQueueSimulator extends QueueSystem {
   handleArrival(customer: Customer) {
     this.arrivalCount++; // Increment the number of arrivals
     customer.arrivalTime = roundTo4Decimals(customer.arrivalTime);
-    if(logEnabled) {
+    if (logEnabled) {
       console.log(
         `Customer ${customer.customerId} arrived at ${customer.arrivalTime}`
       );
@@ -179,8 +192,9 @@ class MMQueueSimulator extends QueueSystem {
     } else {
       // Customer is blocked
       customer.blocked = true;
+      customer.arrivalTime = roundTo4Decimals(customer.arrivalTime); // Ensure arrival time is set
       this.BlockCount++; // Increment the number of blocked customers
-      if(logEnabled) {
+      if (logEnabled) {
         console.log(
           `Customer ${customer.customerId} is blocked at ${customer.arrivalTime}`
         );
@@ -203,7 +217,7 @@ class MMQueueSimulator extends QueueSystem {
         (c) => c.customerId !== customer.customerId
       );
       this.departureCount++; // Increment the number of departures
-      if(logEnabled){
+      if (logEnabled) {
         console.log(
           `Customer ${customer.customerId} departed at ${finishTime} from server ${server.id}`
         );
@@ -236,7 +250,7 @@ class MMQueueSimulator extends QueueSystem {
         ); // Schedule the next departure
         if (isFinite(serviceTime) && serviceTime > 0) {
           this.serviceCount++; // Increment the number of customers entered the service
-          if(logEnabled) {
+          if (logEnabled) {
             console.log(
               `Customer ${customer.customerId} started service at ${this.clock} on server ${availableServer.id} for ${serviceTime} time units`
             );
@@ -267,7 +281,7 @@ class MMQueueSimulator extends QueueSystem {
         arrivalCount: this.arrivalCount,
         arrivalCustomers: new Set<number>(),
         blocked: null,
-        blockCount: this.BlockCount,
+        blockCount: this.capacity === Infinity ? null : this.BlockCount,
         enteredService: true,
         serviceCount: this.serviceCount,
         serviceCustomers: new Set<number>(),
@@ -298,14 +312,11 @@ class MMQueueSimulator extends QueueSystem {
       const { arrivalTime, serviceStartTime, departureTime, blocked } =
         customer;
 
-      // Skip validation for blocked customers
-      if (blocked) {
-        return;
-      }
 
       // Validate times to ensure they are numbers
       if (
         typeof arrivalTime === "number" &&
+        !blocked &&
         typeof serviceStartTime === "number" &&
         typeof departureTime === "number"
       ) {
@@ -328,14 +339,16 @@ class MMQueueSimulator extends QueueSystem {
         );
         // Assert that waiting times are correctly calculated
         console.assert(
-          customer.waitingInQueueTime === roundTo4Decimals(serviceStartTime - arrivalTime),
+          customer.waitingInQueueTime ===
+            roundTo4Decimals(serviceStartTime - arrivalTime),
           `Waiting in queue time should be service start time minus arrival time for customer ${customer.customerId}`
         );
         console.assert(
-          customer.waitingInSystemTime === roundTo4Decimals(departureTime - arrivalTime),
+          customer.waitingInSystemTime ===
+            roundTo4Decimals(departureTime - arrivalTime),
           `Waiting in system time should be departure time minus arrival time for customer ${customer.customerId}`
         );
-      } else {
+      } else if (!blocked) {
         console.error("Invalid data for customer:", customer);
       }
     });
@@ -406,10 +419,23 @@ class MMQueueSimulator extends QueueSystem {
     }
 
     // Assert that the calculated statistics are valid
-    console.assert(this.statistics.averageWaitingTime >= 0, "Average waiting time should be non-negative");
-    console.assert(this.statistics.averageWaitingTimeInQueue >= 0, "Average waiting time in queue should be non-negative");
-    console.assert(this.statistics.averageIdleServerTime >= 0, "Average idle server time should be non-negative");
-    console.assert(this.statistics.blockingProbability >= 0 && this.statistics.blockingProbability <= 1, "Blocking probability should be between 0 and 1");
+    console.assert(
+      this.statistics.averageWaitingTime >= 0,
+      "Average waiting time should be non-negative"
+    );
+    console.assert(
+      this.statistics.averageWaitingTimeInQueue >= 0,
+      "Average waiting time in queue should be non-negative"
+    );
+    console.assert(
+      this.statistics.averageIdleServerTime >= 0,
+      "Average idle server time should be non-negative"
+    );
+    console.assert(
+      this.statistics.blockingProbability >= 0 &&
+        this.statistics.blockingProbability <= 1,
+      "Blocking probability should be between 0 and 1"
+    );
   }
 }
 

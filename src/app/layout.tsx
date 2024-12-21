@@ -8,7 +8,6 @@ import MuiThemeProvider from "@/components/base/MuiThemeProvider";
 import { DD1KProvider } from "@/contexts/DD1KContext";
 import { MMProvider } from "@/contexts/MMContext";
 import localFont from "next/font/local";
-import Head from "next/head";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
 
@@ -62,6 +61,23 @@ export const metadata: Metadata = {
       },
     ],
   },
+  other: {
+    "application/ld+json": JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      name: "Queuify",
+      url: "https://azsce.github.io/Queuify",
+      description:
+        "An interactive calculator and simulator for queuing theory models like M/M/1 and D/D/1/K.",
+      applicationCategory: "Calculator",
+      operatingSystem: "Web",
+      author: {
+        "@type": "Person",
+        name: "Ahmed Hosny",
+        url: "https://github.com/ahmedhosnypro",
+      },
+    }),
+  },
 };
 
 export const viewport: Viewport = {
@@ -78,41 +94,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <Head>
-        {/* <meta name="color-scheme" content="dark light" /> */}
-
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebApplication",
-              name: "Queuify",
-              url: "https://azsce.github.io/Queuify",
-              description:
-                "An interactive calculator and simulator for queuing theory models like M/M/1 and D/D/1/K.",
-              applicationCategory: "Calculator",
-              operatingSystem: "Web",
-              author: {
-                "@type": "Person",
-                name: "Ahmed Hosny",
-                url: "https://github.com/ahmedhosnypro",
-              },
-            }),
-          }}
-        />
-
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-D4KKXZ1SH9');
-            `,
-          }}
-        />
-      </Head>
       <body
         className={`${geistSans.style.fontFamily} ${geistMono.style.fontFamily} antialiased`}
       >

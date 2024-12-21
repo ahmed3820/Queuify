@@ -28,6 +28,7 @@ const CustomerTimeLineTable: React.FC<CustomerTimeLineTableProps> = ({
   const statistics = simulator.statistics;
   const numberOfSumulations = simulator.numOfSimulations;
   const isDarkMode = theme.palette.mode === "dark";
+  const showBlockedColumn = simulator.capacity !== Infinity;
 
   const filteredData = data.filter(
     (row) => row.customerId > 0 && row.customerId <= numberOfSumulations
@@ -73,7 +74,7 @@ const CustomerTimeLineTable: React.FC<CustomerTimeLineTableProps> = ({
         >
           <TableRow>
             <TableCell>Customer</TableCell>
-            <TableCell>Blocked</TableCell>
+            {showBlockedColumn && <TableCell>Blocked</TableCell>}
             <TableCell>Arrival</TableCell>
             <TableCell>{isMobile ? "Service" : "Service Start"}</TableCell>
             <TableCell>{isMobile ? "WQ" : "Waiting In Queue"}</TableCell>
@@ -84,7 +85,7 @@ const CustomerTimeLineTable: React.FC<CustomerTimeLineTableProps> = ({
         <TableBody>
           <TableRow>
             <TableCell
-              colSpan={7}
+              colSpan={showBlockedColumn ? 7 : 6}
               sx={{
                 padding: 0,
                 borderBottom: `1px solid ${
@@ -119,28 +120,30 @@ const CustomerTimeLineTable: React.FC<CustomerTimeLineTableProps> = ({
             >
               {[
                 row.customerId,
-                row.blocked ? "Yes" : "No",
+                showBlockedColumn ? (row.blocked ? "Yes" : "No") : null,
                 row.blocked ? "" : roundTo4Decimals(row.arrivalTime) ?? "",
                 row.blocked ? "" : roundTo4Decimals(row.serviceStartTime) ?? "",
                 row.blocked ? "" : roundTo4Decimals(row.waitingInQueueTime) ?? "",
                 row.blocked ? "" : roundTo4Decimals(row.departureTime) ?? "",
                 row.blocked ? "" : roundTo4Decimals(row.waitingInSystemTime) ?? "",
               ].map((cellContent, cellIndex) => (
-                <TableCell
-                  key={cellIndex}
-                  sx={{
-                    ...columnDividerStyle,
-                    color: row.blocked && cellIndex === 1 ? "red" : isDarkMode ? theme.palette.text.primary : undefined,
-                  }}
-                >
-                  {cellContent}
-                </TableCell>
+                cellContent !== null && (
+                  <TableCell
+                    key={cellIndex}
+                    sx={{
+                      ...columnDividerStyle,
+                      color: row.blocked && cellIndex === 1 ? "red" : isDarkMode ? theme.palette.text.primary : undefined,
+                    }}
+                  >
+                    {cellContent}
+                  </TableCell>
+                )
               ))}
             </TableRow>
           ))}
           <TableRow>
             <TableCell
-              colSpan={7}
+              colSpan={showBlockedColumn ? 7 : 6}
               sx={{
                 padding: 0,
                 borderBottom: `1px solid ${
@@ -165,7 +168,7 @@ const CustomerTimeLineTable: React.FC<CustomerTimeLineTableProps> = ({
             <TableCell sx={columnDividerStyle}>
               <Typography variant="subtitle2">Totals:</Typography>
             </TableCell>
-            <TableCell sx={columnDividerStyle}></TableCell>
+            {showBlockedColumn && <TableCell sx={columnDividerStyle}></TableCell>}
             <TableCell sx={columnDividerStyle}></TableCell>
             <TableCell sx={columnDividerStyle}>
               {roundTo4Decimals(statistics.totalWaitingTime)}
@@ -176,7 +179,7 @@ const CustomerTimeLineTable: React.FC<CustomerTimeLineTableProps> = ({
             </TableCell>
             <TableCell sx={columnDividerStyle}></TableCell>
           </TableRow>
-          {/* avarage */}
+          {/* average */}
           <TableRow
             sx={{
               fontStyle: "italic",
@@ -185,7 +188,7 @@ const CustomerTimeLineTable: React.FC<CustomerTimeLineTableProps> = ({
             <TableCell sx={columnDividerStyle}>
               <Typography variant="subtitle2">Averages:</Typography>
             </TableCell>
-            <TableCell sx={columnDividerStyle}></TableCell>
+            {showBlockedColumn && <TableCell sx={columnDividerStyle}></TableCell>}
             <TableCell sx={columnDividerStyle}></TableCell>
             <TableCell sx={columnDividerStyle}>
               {roundTo4Decimals(statistics.averageWaitingTime)}
